@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Treasure Hunt – Level</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    font-family:Arial, sans-serif;
+}
+
+#game{
+    position:relative;
+    width:100vw;
+    height:100vh;
+    background:linear-gradient(
+        to bottom,
+        #ffd27f 0%,
+        #ffae42 30%,
+        #9adfff 55%,
+        #7fd3ff 65%,
+        #5fbf65 100%
+    );
+}
+
+/* Clouds */
+.cloud{
+    position:absolute;
+    width:140px;
+    height:60px;
+    background:white;
+    border-radius:50px;
+    opacity:0.9;
+}
+.cloud::before,.cloud::after{
+    content:"";
+    position:absolute;
+    background:white;
+    width:60px;
+    height:60px;
+    border-radius:50%;
+}
+.cloud::before{left:20px;top:-30px}
+.cloud::after{left:60px;top:-20px}
+
+/* HUD */
+#hud{
+    position:absolute;
+    top:10px;
+    left:10px;
+    background:rgba(0,0,0,0.6);
+    color:white;
+    padding:10px 16px;
+    border-radius:14px;
+    font-size:18px;
+    z-index:5;
+}
+
+/* Basket */
+#basket{
+    position:absolute;
+    bottom:10px;
+    width:100px;
+}
+
+/* Items */
+.item{
+    position:absolute;
+    width:55px;
+    top:-70px;
+}
+
+/* Screens */
+.screen{
+    display:none;
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.88);
+    color:white;
+    text-align:center;
+    padding-top:160px;
+    z-index:10;
+}
+h1{font-size:52px;margin-bottom:10px}
+p{font-size:20px}
+button{
+    padding:14px 30px;
+    font-size:20px;
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+}
+
+/* Guide */
+.guide{
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    margin-top:25px;
+    font-size:18px;
+}
+.guide div{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.guide img{width:40px}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <!-- Clouds -->
+    <div class="cloud" style="top:80px;left:120px"></div>
+    <div class="cloud" style="top:130px;left:380px"></div>
+    <div class="cloud" style="top:90px;left:650px"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+        Score: <span id="score">0</span> |
+        Lives: <span id="lives">3</span> |
+        Goal: <span id="goal">2000</span>
+    </div>
+
+    <!-- Basket -->
+    <img src="basket.png" id="basket">
+
+    <!-- START / GUIDE SCREEN -->
+    <div id="startScreen" class="screen" style="display:block">
+        <h1>Treasure Hunt</h1>
+        <p>Catch treasures & avoid bombs</p>
+
+        <div class="guide">
+            <div><img src="gold_coin.png"> +10</div>
+            <div><img src="ornament.png"> +20</div>
+            <div><img src="ornament1.png"> +30</div>
+            <div><img src="ornament3.png"> +40</div>
+            <div><img src="diamond.png"> +50</div>
+            <div><img src="ornament2.png"> +60</div>
+            <div><img src="bomb.png"> Lose Life</div>
+        </div>
+
+        <p style="margin-top:25px">Move using ⬅️ ➡️ Arrow Keys</p>
+
+        <button onclick="startGame()" style="margin-top:30px">
+            START GAME
+        </button>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameOver" class="screen">
+        <h1>GAME OVER</h1>
+        <p>Score: <span id="finalScore"></span></p>
+        <button onclick="location.reload()">Retry</button>
+    </div>
+
+    <!-- LEVEL CLEAR -->
+    <div id="levelClear" class="screen">
+        <h1>🎉 CONGRATULATIONS! 🎉</h1>
+        <p>You reached the goal!</p>
+        <button onclick="nextLevel()">Next Level</button>
+    </div>
+
+</div>
+
+<script>
+const game = document.getElementById("game");
+const basket = document.getElementById("basket");
+const scoreEl = document.getElementById("score");
+const livesEl = document.getElementById("lives");
+const goalEl = document.getElementById("goal");
+const gameOver = document.getElementById("gameOver");
+const finalScore = document.getElementById("finalScore");
+const levelClear = document.getElementById("levelClear");
+const startScreen = document.getElementById("startScreen");
+
+let score = 0;
+let lives = 3;
+let gameRunning = false;
+let goalScore = 2000;
+goalEl.textContent = goalScore;
+
+/* Smooth basket movement */
+let x = innerWidth/2 - 50;
+let v = 0;
+const accel = 1.1;
+const maxSpeed = 14;
+const friction = 0.87;
+let keys = {};
+
+addEventListener("keydown", e => keys[e.key] = true);
+addEventListener("keyup", e => keys[e.key] = false);
+
+function moveBasket(){
+    if(gameRunning){
+        if(keys.ArrowLeft) v -= accel;
+        if(keys.ArrowRight) v += accel;
+        v = Math.max(-maxSpeed, Math.min(maxSpeed, v));
+        v *= friction;
+        x += v;
+        x = Math.max(0, Math.min(innerWidth - 100, x));
+        basket.style.left = x + "px";
+    }
+    requestAnimationFrame(moveBasket);
+}
+moveBasket();
+
+/* Difficulty */
+let fallSpeed = 5;
+let wind = 6.5;
+let spawnRate = 280;
+let spawner;
+
+/* Spawn items */
+function spawnItem(){
+    if(!gameRunning) return;
+
+    const item = document.createElement("img");
+    let value = 0;
+    let speed = fallSpeed + Math.random()*3;
+    let windDir = Math.random()<0.5 ? -1 : 1;
+    const r = Math.random();
+
+   if(r < 0.28){ item.src="gold_coin.png"; value=10; }
+else if(r < 0.45){ item.src="ornament.png"; value=20; }
+else if(r < 0.60){ item.src="ornament1.png"; value=30; }
+else if(r < 0.70){ item.src="ornament3.png"; value=40; }
+else if(r < 0.80){ item.src="diamond.png"; value=50; }
+else if(r < 0.88){ item.src="ornament2.png"; value=60; }
+else{ item.src="bomb.png"; value=-1; speed+=4; }
+
+
+    item.className="item";
+    let ix=Math.random()*(innerWidth-60), iy=-70;
+    game.appendChild(item);
+
+    const fall=setInterval(()=>{
+        iy+=speed;
+        ix+=wind*windDir;
+        if(ix<=0||ix>=innerWidth-60) windDir*=-1;
+
+        item.style.top=iy+"px";
+        item.style.left=ix+"px";
+
+        if(iy+50>basket.offsetTop &&
+           ix<basket.offsetLeft+100 &&
+           ix+50>basket.offsetLeft){
+
+            if(value===-1){
+                lives--;
+                livesEl.textContent=lives;
+                if(lives<=0) endGame();
+            }else{
+                score+=value;
+                scoreEl.textContent=score;
+                if(score>=goalScore) levelComplete();
+            }
+            item.remove(); clearInterval(fall);
+        }
+        if(iy>innerHeight){ item.remove(); clearInterval(fall); }
+    },16);
+}
+
+/* Gradual difficulty */
+setInterval(()=>{
+    fallSpeed+=0.3;
+    wind+=0.25;
+},5000);
+
+function startGame(){
+    startScreen.style.display="none";
+    gameRunning=true;
+    spawner=setInterval(spawnItem, spawnRate);
+}
+
+function endGame(){
+    gameRunning=false;
+    clearInterval(spawner);
+    gameOver.style.display="block";
+    finalScore.textContent=score;
+}
+
+function levelComplete(){
+    gameRunning=false;
+    clearInterval(spawner);
+    levelClear.style.display="block";
+}
+
+function nextLevel(){
+    window.location.href = "game4.html";
+}
+
+</script>
+
+</body>
+</html>

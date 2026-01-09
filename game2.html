@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Treasure Hunt Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      padding: 30px;
+    }
+    #container {
+      background: white;
+      display: inline-block;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 15px rgba(0,0,0,0.2);
+      max-width: 500px;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 220px;
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .swapBtn {
+      background-color: #ff9800 !important;
+      margin-left: 10px;
+    }
+    #message {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #lives {
+      margin-top: 10px;
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="container">
+  <h1>🎯 Treasure Hunt Quiz</h1>
+
+  <div id="question"></div>
+
+  <input type="text" id="answer" placeholder="Enter your answer">
+  <br>
+
+  <button onclick="checkAnswer()">Submit</button>
+  <button class="swapBtn" onclick="swapQuestion()">Change Question</button>
+
+  <div id="message"></div>
+  <div id="lives"></div>
+  <div id="level"></div>
+</div>
+
+<script>
+  // 🔹 5 Levels, each level has multiple questions
+  const levels = [
+    [
+      { q: "I run but never walk. I have a bed but never sleep. What am I?", a: ["river"] },
+      { q: "What has a neck but no head?", a: ["bottle"] },
+      
+    ],
+    [
+     
+      { q: "What can travel around the world yet stays in a corner?", a: ["stamp"] },
+      { q: "What has keys but can't open locks?", a: ["keyboard", "piano"] }
+    ],
+    [
+      { q: "The more you take, the more you leave behind. What am I?", a: ["footsteps", "footstep"] },
+      
+      { q: "What can fill a room but takes up no space?", a: ["light"] }
+    ],
+    [
+      { q: "What has many teeth but cannot bite?", a: ["comb"] },
+      { q: "What has words but never speaks?", a: ["book","newspaper"] },
+      
+    ],
+    [
+      
+      { q: "What has one eye but cannot see?", a: ["needle"] },
+      { q: "What begins with T, ends with T and has T in it?", a: ["teapot"] }
+    ]
+  ];
+
+  let currentLevel = 0;
+  let currentQuestionIndex = 0;
+  let lives = 3;
+
+  function loadQuestion() {
+    const currentSet = levels[currentLevel];
+    const qObj = currentSet[currentQuestionIndex];
+    document.getElementById("question").innerText = qObj.q;
+    document.getElementById("answer").value = "";
+    document.getElementById("message").innerText = "";
+    document.getElementById("lives").innerText = "Lives left: " + lives;
+    document.getElementById("level").innerText = 
+      "Level " + (currentLevel + 1) + " / " + levels.length;
+  }
+
+  function swapQuestion() {
+    const currentSet = levels[currentLevel];
+    currentQuestionIndex = (currentQuestionIndex + 1) % currentSet.length;
+    loadQuestion();
+  }
+
+  function checkAnswer() {
+    let userAnswer = document.getElementById("answer").value.trim().toLowerCase();
+    const currentSet = levels[currentLevel];
+    const qObj = currentSet[currentQuestionIndex];
+
+    if (qObj.a.includes(userAnswer)) {
+      currentLevel++;
+      currentQuestionIndex = 0; // reset for next level
+
+      if (currentLevel < levels.length) {
+        document.getElementById("message").innerText = "✅ Correct! Next Level...";
+        setTimeout(loadQuestion, 1000);
+      } else {
+        document.getElementById("container").innerHTML = `
+          <h1>🎉 Game Completed!</h1>
+          <p>You successfully finished all levels!</p>
+          <button onclick="goNext()">➡ Next Level</button>
+        `;
+      }
+    } else {
+      lives--;
+      if (lives > 0) {
+        document.getElementById("message").innerText = "❌ Wrong! Try again.";
+        document.getElementById("lives").innerText = "Lives left: " + lives;
+      } else {
+        document.getElementById("container").innerHTML = `
+          <h1>💀 Game Over</h1>
+          <p>You lost all lives.</p>
+          <button onclick="location.reload()">Retry</button>
+        `;
+      }
+    }
+  }
+
+  function goNext() {
+    window.location.href = "game3.html";
+  }
+
+  loadQuestion();
+</script>
+
+</body>
+</html>

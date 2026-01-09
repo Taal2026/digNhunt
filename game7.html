@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Digital Treasure Hunt – Hangman</title>
+
+<style>
+body{
+  background:#0b0b0b;
+  color:white;
+  font-family:Arial, sans-serif;
+  text-align:center;
+}
+
+#guideline{
+  margin-top:20px;
+  font-size:18px;
+  color:#00ffcc;
+}
+
+#levelDisplay{
+  margin-top:10px;
+  font-size:22px;
+  font-weight:bold;
+}
+
+#word{
+  font-size:32px;
+  letter-spacing:10px;
+  margin:30px 0;
+}
+
+#message{
+  margin-top:20px;
+  font-size:18px;
+  color:#00ffcc;
+}
+
+#hangman{
+  white-space:pre;
+  font-family:monospace;
+  font-size:18px;
+  margin-top:20px;
+}
+
+#retryBtn{
+  display:none;
+  margin-top:20px;
+  padding:10px 20px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+#nextLevel{
+  margin-top:30px;
+  display:none;
+}
+
+#nextLevel a{
+  color:#00ffcc;
+  font-size:20px;
+  text-decoration:none;
+  border:1px solid #00ffcc;
+  padding:10px 20px;
+}
+
+#nextLevel a:hover{
+  background:#00ffcc;
+  color:black;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Guess the Word</h2>
+<div id="guideline">Pass three levels to complete this task</div>
+<div id="levelDisplay">Level 1</div>
+<div id="word"></div>
+<div id="hangman"></div>
+<div id="message"></div>
+
+<button id="retryBtn">Retry</button>
+
+<div id="nextLevel">
+  <button onclick="location.href='game8.html'">Next Level</button>
+</div>
+
+<script>
+// Custom 30-word collection
+const wordCollection = [
+  "ACCOUNTABILITY", "ORIENTATION", "INVESTIGATION", "ACKNOWLEDGMENT", "APPROPRIATELY",
+  "ARCHITECTURE", "ADMINISTRATIVE", "ESTABLISHMENT", "CONFIGURATION", "SIGNIFICANT",
+  "CHARACTERIZATION", "PERSEVERANCE", "RELATIONSHIP", "INDEPENDENCE", "EXTRACURRICULAR",
+  "IMPLEMENTATION", "RESPONSIBLE", "CERTIFICATION", "REMARKABLE", "DETERMINATION",
+  "JUSTIFICATION", "SIGNIFICANCE", "ACCURATE", "INFORMATIONAL", "CONFIDENTIALITY",
+  "CONSISTENT", "RELIABILITY", "MISUNDERSTANDING", "PRODUCTIVITY", "FUNDAMENTAL"
+];
+
+// Now 3 levels with pre-reveal letters
+const levels = [
+  { word: "", reveal: ["E","Y"] },
+  { word: "", reveal: ["O"] },
+  { word: "", reveal: ["A","L"] }
+];
+
+const hangmanStages = [
+` -----\n |   |\n     |\n     |\n     |\n     |`,
+` -----\n |   |\n O   |\n     |\n     |\n     |`,
+` -----\n |   |\n O   |\n |   |\n     |\n     |`,
+` -----\n |   |\n O   |\n/|   |\n     |\n     |`,
+` -----\n |   |\n O   |\n/|\\  |\n     |\n     |`,
+` -----\n |   |\n O   |\n/|\\  |\n/    |\n     |`,
+` -----\n |   |\n O   |\n/|\\  |\n/ \\  |\n     |`
+];
+
+let level = 0;
+let guessed = [];
+let wrong = 0;
+let locked = false;
+let usedWords = [];
+
+function getRandomWord() {
+  if (usedWords.length === wordCollection.length) {
+    usedWords = [];
+  }
+  let remaining = wordCollection.filter(w => !usedWords.includes(w));
+  let word = remaining[Math.floor(Math.random() * remaining.length)];
+  usedWords.push(word);
+  return word;
+}
+
+function startLevel(){
+  guessed = [];
+  wrong = 0;
+  locked = false;
+  document.getElementById("retryBtn").style.display = "none";
+  document.getElementById("message").innerText = "";
+
+  const data = levels[level];
+  data.word = getRandomWord();
+
+  document.getElementById("levelDisplay").innerText = "Level " + (level + 1);
+
+  data.reveal.forEach(l => guessed.push(l));
+  render();
+}
+
+function render(){
+  const data = levels[level];
+  let display = "";
+
+  for(let ch of data.word){
+    display += guessed.includes(ch) ? ch + " " : "_ ";
+  }
+
+  document.getElementById("word").innerText = display;
+  document.getElementById("hangman").innerText = hangmanStages[wrong];
+}
+
+document.addEventListener("keydown", e => {
+  if(locked) return;
+
+  const letter = e.key.toUpperCase();
+  if(!/^[A-Z]$/.test(letter)) return;
+
+  const data = levels[level];
+  if(guessed.includes(letter)) return;
+
+  if(data.word.includes(letter)){
+    guessed.push(letter);
+  } else {
+    wrong++;
+    if(wrong === 6){
+      locked = true;
+      document.getElementById("message").innerText = "Word not guessed!";
+      document.getElementById("retryBtn").style.display = "inline-block";
+    }
+  }
+
+  render();
+
+  const solved = [...data.word].every(ch => guessed.includes(ch));
+  if(solved){
+    locked = true;
+    level++;
+    if(level < levels.length){
+      document.getElementById("message").innerText = "Correct! Next word loading...";
+      setTimeout(startLevel, 1500);
+    } else {
+      document.getElementById("message").innerText = "All words completed!";
+      document.getElementById("nextLevel").style.display = "block";
+    }
+  }
+});
+
+document.getElementById("retryBtn").onclick = () => {
+  startLevel();
+};
+
+startLevel();
+</script>
+
+</body>
+</html>

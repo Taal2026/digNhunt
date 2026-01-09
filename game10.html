@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bungalow Treasure Hunt</title>
+
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+
+    #info {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 12px;
+      border-radius: 6px;
+      z-index: 2;
+      display: none; /* hidden until game starts */
+    }
+
+    /* SEARCH TEXT */
+    #searchText {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 20px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 16px;
+      border-radius: 8px;
+      display: none;
+      z-index: 2;
+    }
+
+    /* INTRO SCREEN */
+    #introScreen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        rgba(0,0,0,0.65),
+        rgba(0,0,0,0.85)
+      );
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    #introBox {
+      background: rgba(0,0,0,0.75);
+      padding: 40px 50px;
+      border-radius: 16px;
+      max-width: 600px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    #introBox h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    #introBox p {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 30px;
+    }
+
+    .rule {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      text-align: left;
+      font-size: 17px;
+    }
+
+    .key {
+      background: #fff;
+      color: #000;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    #startBtn {
+      margin-top: 30px;
+      padding: 14px 36px;
+      font-size: 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: linear-gradient(135deg,#ffcc00,#ff9900);
+      font-weight: bold;
+    }
+
+    #startBtn:hover {
+      transform: translateY(-2px);
+    }
+
+    /* WIN SCREEN (unchanged) */
+    #winScreen {
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 40, 60, 0.95);
+      color: white;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+    /* ===== WIN SCREEN ===== */
+.win-screen {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, #0a1a2f, #02040a 70%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+  animation: fadeIn 1.2s ease;
+}
+
+.win-content {
+  position: relative;
+  text-align: center;
+  color: white;
+  font-family: "Segoe UI", Arial, sans-serif;
+  padding: 40px 60px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  box-shadow: 0 0 40px rgba(255,215,0,0.15);
+}
+
+/* Golden aura */
+.treasure-glow {
+  position: absolute;
+  inset: -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,215,0,0.35), transparent 70%);
+  filter: blur(40px);
+  animation: pulse 3s infinite ease-in-out;
+  z-index: -1;
+}
+
+/* Title */
+.win-title {
+  font-size: 3.4rem;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #ffd700, #fff1a8, #ffd700);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20px rgba(255,215,0,0.6);
+}
+
+/* Subtitle */
+.win-subtitle {
+  font-size: 1.3rem;
+  opacity: 0.9;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+/* Sparkles */
+.sparkle-row {
+  font-size: 1.6rem;
+  margin-bottom: 30px;
+  animation: sparkle 2.5s infinite ease-in-out;
+}
+
+/* Button */
+.win-button {
+  padding: 14px 34px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ffd700, #ffb700);
+  color: #2a1a00;
+  box-shadow: 0 0 25px rgba(255,215,0,0.6);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.win-button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 40px rgba(255,215,0,0.9);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%,100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes sparkle {
+  0%,100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+  </style>
+</head>
+
+<body>
+
+<!-- INTRO SCREEN -->
+<div id="introScreen">
+  <div id="introBox">
+    <h1>🏴‍☠️ Treasure Hunt</h1>
+    <p>Now let’s search the real treasure</p>
+
+    <div class="rule"><div class="key">W</div>Move Forward</div>
+    <div class="rule"><div class="key">A</div>Move Left</div>
+    <div class="rule"><div class="key">S</div>Move Backward</div>
+    <div class="rule"><div class="key">D</div>Move Right</div>
+    <div class="rule"><div class="key">🖱</div>Look Around</div>
+    <div class="rule"><div class="key">E</div>Search Objects</div>
+    <div class="rule"><div class="key">🎯</div>Find the key, then unlock the treasure</div>
+<div class="rule">
+  <div class="key">👁</div>
+  Hover over objects to search
+</div>
+
+    <button id="startBtn" onclick="startGame()">
+      START TREASURE HUNT
+    </button>
+  </div>
+</div>
+
+<!-- INFO -->
+<div id="info">Click to start | WASD to move | Mouse to look</div>
+
+<!-- SEARCH TEXT -->
+<div id="searchText">Press E to search</div>
+
+<!-- WIN SCREEN -->
+<div id="winScreen" class="win-screen">
+  <div class="win-content">
+    <div class="treasure-glow"></div>
+
+    <h1 class="win-title">🏆 TREASURE UNLOCKED!</h1>
+    <p class="win-subtitle">
+      You searched, you explored,<br>
+      and you found the real treasure ✨
+    </p>
+
+    <div class="sparkle-row">
+      ✨ 💎 ✨ 💰 ✨
+    </div>
+
+    
+  </div>
+</div>
+
+
+<!-- THREE IMPORT -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module" src="./game.js"></script>
+
+<script>
+function startGame() {
+  document.getElementById("introScreen").style.display = "none";
+  document.getElementById("info").style.display = "block";
+}
+</script>
+
+</body>
+</html>

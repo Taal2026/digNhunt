@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Treasure Chest Hunt</title>
+    <style>
+        body {
+            background: linear-gradient(#06182d, #0b3a6f);
+            font-family: Arial;
+            text-align: center;
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        #top {font-size: 18px; margin-bottom: 20px;}
+        #gameArea {display: flex; justify-content: center; gap: 40px; margin-top: 30px;}
+        .chest {width: 130px; cursor: pointer; transition: transform 0.2s;}
+        .chest:hover {transform: scale(1.05);}
+        
+        #messageSection {margin-top: 40px; min-height: 200px;}
+        #popup {
+            background: gold; color: #3b2500; padding: 20px;
+            border-radius: 10px; font-size: 22px; display: none;
+            width: fit-content; margin: 0 auto; font-weight: bold;
+            border: 3px solid #3b2500;
+        }
+        button {
+            margin-top: 20px; padding: 12px 30px;
+            font-size: 18px; cursor: pointer; display: none;
+            background: #ffcc00; border: 2px solid #3b2500;
+            border-radius: 5px; color: #3b2500; font-weight: bold;
+        }
+        button:hover {background: #fff;}
+    </style>
+</head>
+<body>
+
+<h1>🏴‍☠️ Treasure Chest Hunt</h1>
+<div id="top">Round: <span id="Round">1</span> | Coins: <span id="coins">0</span> | Lives: <span id="lives">100</span></div>
+
+<div id="gameArea">
+    <img src="chest_closed.png" class="chest" onclick="pickChest(0)">
+    <img src="chest_closed.png" class="chest" onclick="pickChest(1)">
+    <img src="chest_closed.png" class="chest" onclick="pickChest(2)">
+</div>
+
+<div id="messageSection">
+    <div id="popup"></div>
+    <button id="actionBtn" onclick="nextTurn()">Continue</button>
+</div>
+
+<script>
+    let Round = 1;
+    let totalCoins = 0;
+    let lives = 100;
+    let correctChest = 0;
+    let clicked = false;
+
+    const prizes = [0, 50, 100, 250, 500, 1000]; // stops at Round 5 only
+    const chests = document.getElementsByClassName("chest");
+
+    shuffleChest();
+
+    function shuffleChest() {
+        correctChest = Math.floor(Math.random() * 3);
+        resetBoard();
+    }
+
+    function resetBoard() {
+        clicked = false;
+        for(let chest of chests) {
+            chest.src = "chest_closed.png";
+        }
+    }
+
+    function pickChest(index) {
+        if(clicked) return;
+        clicked = true;
+        
+        const popup = document.getElementById("popup");
+        const btn = document.getElementById("actionBtn");
+
+        if(index === correctChest) {
+            chests[index].src = "chest_open.png";
+            totalCoins += prizes[Round];
+
+            if(Round === 5) {
+                popup.innerHTML = `🏆 GAME FINISHED!<br>Total Coins: ${totalCoins}`;
+                btn.innerText = "Next Level";   // <<< FIXED
+            } else {
+                popup.innerHTML = `🎉 CONGRATS!<br>+${prizes[Round]} Coins!`;
+                btn.innerText = "Next Round";
+            }
+
+        } else {
+            chests[index].src = "chest_empty.png";
+            lives--;
+            document.getElementById("lives").innerText = lives;
+
+            if(lives <= 0) {
+                popup.innerHTML = `💣 WRONG CHEST!<br>All Lives Lost!`;
+                btn.innerText = "Restart Game";
+            } else {
+                popup.innerHTML = `❌ WRONG!<br>Try Again Same Round!`;
+                btn.innerText = "Try Again";
+            }
+        }
+
+        document.getElementById("coins").innerText = totalCoins;
+        popup.style.display = "block";
+        btn.style.display = "inline-block";
+    }
+
+    function nextTurn() {
+        const popup = document.getElementById("popup");
+        const btn = document.getElementById("actionBtn");
+        const mode = btn.innerText;
+
+        popup.style.display = "none";
+        btn.style.display = "none";
+
+        if(mode === "Try Again") {
+            resetBoard();
+        }
+        else if(mode === "Next Round") {
+            Round++;
+            document.getElementById("Round").innerText = Round;
+            shuffleChest();
+        }
+        else if(mode === "Restart Game") {
+            Round = 1;
+            totalCoins = 0;
+            lives = 100;
+            document.getElementById("Round").innerText = Round;
+            document.getElementById("coins").innerText = totalCoins;
+            document.getElementById("lives").innerText = lives;
+            shuffleChest();
+        }
+        else if(mode === "Next Level") {
+            // <<< HERE YOU CONNECT TO OTHER GAME
+            window.location.href = "game5.html"; 
+        }
+    }
+</script>
+
+</body>
+</html>

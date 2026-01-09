@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Memory Pair Game</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#game {
+    display: grid;
+    grid-template-columns: repeat(6, 80px);
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.card {
+    width: 80px;
+    height: 80px;
+    font-size: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #333;
+    cursor: pointer;
+    background: #999;
+}
+
+.card.revealed {
+    background: #f0f0f0;
+}
+
+.card.matched {
+    background: #b6f5c3;
+    cursor: default;
+}
+
+#message {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Memory Pair Game</h2>
+<p>Time left: <span id="time">120</span> seconds</p>
+
+<div id="game"></div>
+
+<div id="message"></div>
+
+<button id="retry" style="display:none;">Try Again</button>
+
+<div id="nextLevel" style="display:none;">
+    <button onclick="location.href='game9.html'">
+        Next Level
+    </button>
+</div>
+
+<script>
+const emojis = [
+    "🍎","🍌","🍇","🍓","🍒",
+    "🥝","🍍","🍉","🍑","🍋",
+    "🍊","🥥","🥭","🍐","🍈"
+];
+
+let firstCard = null;
+let secondCard = null;
+let lockBoard = false;
+let matchedPairs = 0;
+let timeLeft = 120;
+let timer;
+
+const game = document.getElementById("game");
+const timeDisplay = document.getElementById("time");
+const message = document.getElementById("message");
+const retryBtn = document.getElementById("retry");
+const nextLevel = document.getElementById("nextLevel");
+
+function shuffle(arr) {
+    return arr.sort(() => Math.random() - 0.5);
+}
+
+function startGame() {
+    game.innerHTML = "";
+    message.textContent = "";
+    retryBtn.style.display = "none";
+    nextLevel.style.display = "none";
+
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+    matchedPairs = 0;
+    timeLeft = 120;
+    timeDisplay.textContent = timeLeft;
+
+    const cards = shuffle([...emojis, ...emojis]);
+
+    cards.forEach(emoji => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.dataset.emoji = emoji;
+        div.textContent = emoji;
+        game.appendChild(div);
+    });
+
+    setTimeout(hideAllCards, 300);
+
+    clearInterval(timer);
+    timer = setInterval(updateTimer, 1000);
+}
+
+function hideAllCards() {
+    document.querySelectorAll(".card").forEach(card => {
+        card.textContent = "";
+        card.addEventListener("click", handleClick);
+    });
+}
+
+function handleClick() {
+    if (lockBoard) return;
+    if (this.classList.contains("matched")) return;
+    if (this === firstCard) return;
+
+    revealCard(this);
+
+    if (!firstCard) {
+        firstCard = this;
+        return;
+    }
+
+    secondCard = this;
+    lockBoard = true;
+
+    setTimeout(checkMatch, 300);
+}
+
+function revealCard(card) {
+    card.textContent = card.dataset.emoji;
+    card.classList.add("revealed");
+}
+
+function hideCard(card) {
+    card.textContent = "";
+    card.classList.remove("revealed");
+}
+
+function checkMatch() {
+    if (firstCard.dataset.emoji === secondCard.dataset.emoji) {
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+        matchedPairs++;
+
+        if (matchedPairs === 15) {
+            winGame();
+        }
+    } else {
+        hideCard(firstCard);
+        hideCard(secondCard);
+    }
+
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+}
+
+function updateTimer() {
+    timeLeft--;
+    timeDisplay.textContent = timeLeft;
+
+    if (timeLeft === 0) {
+        clearInterval(timer);
+        loseGame();
+    }
+}
+
+function loseGame() {
+    message.textContent = "Time's up! You lose.";
+    retryBtn.style.display = "inline-block";
+    document.querySelectorAll(".card").forEach(card => {
+        card.removeEventListener("click", handleClick);
+    });
+}
+
+function winGame() {
+    clearInterval(timer);
+    message.textContent = "Level Passed!";
+    nextLevel.style.display = "block";
+}
+
+retryBtn.onclick = startGame;
+
+startGame();
+</script>
+
+</body>
+</html>

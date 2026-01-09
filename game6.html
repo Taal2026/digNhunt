@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Galaxy Signal</title>
+
+<style>
+body{
+  margin:0;
+  background:black;
+  overflow:hidden;
+  cursor:crosshair;
+  font-family:Arial, sans-serif;
+}
+
+#instruction{
+  position:fixed;
+  top:20px;
+  width:100%;
+  text-align:center;
+  color:white;
+  font-size:18px;
+  z-index:10;
+}
+
+#status{
+  position:fixed;
+  bottom:20px;
+  width:100%;
+  text-align:center;
+  color:#aaa;
+  font-size:14px;
+  z-index:10;
+}
+
+#galaxy{
+  position:fixed;
+  inset:0;
+  background:url("galaxy.jpg") center/cover no-repeat;
+}
+
+.star{
+  position:absolute;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:white;
+  cursor:pointer;
+}
+
+.star::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  background:radial-gradient(circle,rgba(255,255,255,.25),transparent);
+}
+
+/* reward */
+.reward{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%) scale(0.2);
+  opacity:0;
+  color:white;
+  text-align:center;
+  transition:opacity 2s ease, transform 2s ease;
+}
+
+.reveal .reward{
+  opacity:1;
+  transform:translate(-50%,-50%) scale(1);
+}
+</style>
+</head>
+
+<body>
+
+<div id="instruction">One star hides the treasure. Click wisely.</div>
+<div id="status">Stars scanned: 0</div>
+<div id="galaxy"></div>
+
+<script>
+const galaxy = document.getElementById("galaxy");
+const status = document.getElementById("status");
+
+const starCount = 70;
+const minDistance = 18; // prevents overlap
+const positions = [];
+const correctStar = Math.floor(Math.random() * starCount);
+
+let scanned = 0;
+let gameOver = false;
+
+function isFarEnough(x, y){
+  return positions.every(p => {
+    const dx = p.x - x;
+    const dy = p.y - y;
+    return Math.sqrt(dx*dx + dy*dy) > minDistance;
+  });
+}
+
+for(let i = 0; i < starCount; i++){
+  let x, y, tries = 0;
+
+  do{
+    x = Math.random() * 95;
+    y = Math.random() * 95;
+    tries++;
+  } while(!isFarEnough(x, y) && tries < 100);
+
+  positions.push({ x, y });
+
+  const star = document.createElement("div");
+  star.className = "star";
+  star.style.left = x + "vw";
+  star.style.top  = y + "vh";
+
+  if(i === correctStar){
+    const reward = document.createElement("div");
+    reward.className = "reward";
+    reward.innerHTML = `
+      <div style="font-size:48px">🎉</div>
+      <div>Yay! You found it.</div>
+      <button onclick="location.href='game7.html'"
+        style="margin-top:10px;padding:8px 16px;font-size:14px;cursor:pointer;">
+        Next Level
+      </button>
+    `;
+    star.appendChild(reward);
+
+    star.onclick = () => {
+      if(gameOver) return;
+      gameOver = true;
+      star.classList.add("reveal");
+      status.textContent = "Signal found. Mission complete.";
+    };
+  } else {
+    star.onclick = () => {
+      if(gameOver || star.classList.contains("checked")) return;
+      star.classList.add("checked");
+      star.style.opacity = 0.3;
+      scanned++;
+      status.textContent = `Stars scanned: ${scanned}`;
+    };
+  }
+
+  galaxy.appendChild(star);
+}
+</script>
+
+</body>
+</html>

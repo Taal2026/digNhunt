@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Festive Number Order Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #0b0f3a;
+  color: #fff;
+  text-align: center;
+}
+
+h1 {
+  margin-top: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 10px;
+  width: 95%;
+  max-width: 950px;
+  margin: 20px auto;
+}
+
+.cell {
+  aspect-ratio: 1 / 1;
+  background: #2b2f8f;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.cell:hover {
+  transform: scale(1.05);
+}
+
+.cell img {
+  width: 55%;
+  height: 55%;
+  pointer-events: none;
+}
+
+.number {
+  display: none;
+  font-size: 30px;
+  font-weight: bold;
+  color: #ffeb3b;
+}
+
+.cell.open {
+  background: #000;
+}
+
+.cell.open img {
+  display: none;
+}
+
+.cell.open .number {
+  display: block;
+}
+
+.cell.wrong {
+  background: #b00020 !important;
+}
+
+.message {
+  font-size: 18px;
+  min-height: 24px;
+  margin-bottom: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Find Numbers 1 → 10</h1>
+<p>All cells have numbers 1–70. One mistake resets everything.</p>
+
+<div class="grid" id="grid"></div>
+<div class="message" id="message"></div>
+
+<script>
+const TOTAL = 70;
+const TARGET_MAX = 10;
+const COLS = 10;
+const grid = document.getElementById("grid");
+const message = document.getElementById("message");
+
+const CLOSED_IMAGE = "https://img.icons8.com/fluency/96/coins.png";
+
+let current = 1;
+let cells = [];
+
+/* Fisher-Yates */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* Check adjacency (including diagonals) */
+function isAdjacent(a, b) {
+  const ax = a % COLS, ay = Math.floor(a / COLS);
+  const bx = b % COLS, by = Math.floor(b / COLS);
+  return Math.abs(ax - bx) <= 1 && Math.abs(ay - by) <= 1;
+}
+
+/* HARD SHUFFLE */
+function generateHardLayout() {
+  const layout = Array(TOTAL).fill(null);
+  const positions = [...Array(TOTAL).keys()];
+  shuffle(positions);
+
+  let placedPositions = [];
+
+  // Place 1–10 far apart
+  for (let n = 1; n <= TARGET_MAX; n++) {
+    let pos;
+    let attempts = 0;
+
+    do {
+      pos = positions.pop();
+      attempts++;
+    } while (
+      placedPositions.some(p => isAdjacent(p, pos)) &&
+      attempts < 50
+    );
+
+    layout[pos] = n;
+    placedPositions.push(pos);
+  }
+
+  // Fill traps (21–70)
+  let trap = TARGET_MAX + 1;
+  for (let i = 0; i < TOTAL; i++) {
+    if (layout[i] === null) {
+      layout[i] = trap++;
+    }
+  }
+
+  shuffle(layout); // final mix to remove patterns
+  return layout;
+}
+
+function resetGame() {
+  cells.forEach(c => c.classList.remove("open", "wrong"));
+  current = 1;
+  message.textContent = "❌ Wrong! Start again from 1";
+}
+
+function createGrid() {
+  grid.innerHTML = "";
+  cells = [];
+  current = 1;
+  message.textContent = "Find number 1";
+
+  const numbers = generateHardLayout();
+  console.log("Hard layout:", numbers); // debug if needed
+
+  numbers.forEach(value => {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+
+    const img = document.createElement("img");
+    img.src = CLOSED_IMAGE;
+
+    const num = document.createElement("div");
+    num.className = "number";
+    num.textContent = value;
+
+    cell.appendChild(img);
+    cell.appendChild(num);
+
+    cell.addEventListener("click", () => {
+      if (cell.classList.contains("open")) return;
+
+      cell.classList.add("open");
+
+      if (value === current && value <= TARGET_MAX) {
+        current++;
+      if (current > TARGET_MAX) {
+  message.textContent = "🎉 Level Completed!";
+  levelCompletedBlast();
+
+  // ⏳ wait a bit so player sees celebration
+  setTimeout(() => {
+    window.location.href = "game10.html";
+  }, 2000); // 2 seconds delay
+}
+
+         else {
+        message.textContent = `Find number ${current}`;
+        }
+
+      } else {
+        cell.classList.add("wrong");
+        message.textContent = "❌ Wrong!";
+        setTimeout(resetGame, 800);
+      }
+    });
+
+    cells.push(cell);
+    grid.appendChild(cell);
+  });
+}
+
+createGrid();
+
+function levelCompletedBlast() {
+  confetti({
+    particleCount: 180,
+    spread: 90,
+    origin: { y: 0.6 }
+  });
+
+  setTimeout(() => {
+    confetti({
+      particleCount: 120,
+      spread: 120,
+      origin: { x: 0.2, y: 0.5 }
+    });
+  }, 300);
+
+  setTimeout(() => {
+    confetti({
+      particleCount: 120,
+      spread: 120,
+      origin: { x: 0.8, y: 0.5 }
+    });
+  }, 600);
+}
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+
+</body>
+</html>
